@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 
 
@@ -34,17 +36,39 @@ def veval_matrix(pssa, rsa, policy, gamma):
     return v
 
 
-def veval_iter(pssa, rsa, policy, gamma, theta=1e-5):
+def synch_veval_iter(pssa, rsa, policy, gamma, theta=1e-5, show_count=False):
     Rpi = get_rpi(rsa, policy)
     Ppi = get_ppi(pssa, policy)
     vk = np.zeros((25, 1))
 
     delta = 1
+    n = 0
     while delta > theta:
+        n += 1
         vk1 = Rpi + gamma * Ppi @ vk
         delta = np.linalg.norm(vk1 - vk)
         vk = vk1
+    if show_count:
+        print('Iteration count: ', n)
     return vk
+
+
+def asynch_veval_iter(pssa, rsa, policy, gamma, theta=1e-5, show_count=False):
+    Rpi = get_rpi(rsa, policy)
+    Ppi = get_ppi(pssa, policy)
+
+    vk1 = np.zeros((25, 1))
+    delta = 1
+    n = 0
+    while delta > theta:
+        n += 1
+        vk = copy.copy(vk1)
+        for i in range(25):
+            vk1[i] = Rpi[i] + gamma * Ppi[i] @ vk1
+        delta = np.linalg.norm(vk1 - vk)
+    if show_count:
+        print('Iteration count: ', n)
+    return vk1
 
 
 def policy_imprv(pssa, rsa, policy, gamma, vi=None, theta=1e-5):
@@ -71,7 +95,7 @@ def policy_imprv(pssa, rsa, policy, gamma, vi=None, theta=1e-5):
             in_index = np.argwhere(vix4[i] == maxes[i])
             for j in in_index:
                 policy[i][j[0]] = 1 / in_index.shape[0]
-        vi1 = veval_iter(pssa, rsa, policy, gamma)
+        vi1 = synch_veval_iter(pssa, rsa, policy, gamma)
         delta = np.linalg.norm(vi1 - vi)
         vi = vi1
 
