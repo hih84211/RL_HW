@@ -10,7 +10,7 @@ def veval_matrix(pssa, rsa, policy, gamma):
     #number of states & actions
     nstates=rsa.shape[0]
     nactions=rsa.shape[1]
-        
+
     #First, let's compute a few useful intermediate matrices,
     # r(s,a) and p(s',s,a) averaged over policy actions    
     Rpi=np.sum(policy*rsa,axis=1)
