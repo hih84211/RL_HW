@@ -102,6 +102,7 @@ for move in range(nactions):
 #################################################################
 
 try:
+    theta = 1e-8
     #Policy function for uniform random policy
     policy=np.zeros((nstates,nactions),dtype=np.float32)
     policy.fill(1.0/nactions) #4 directions, 25% probability each direction
@@ -109,16 +110,16 @@ try:
     #solve for value function
 
     print('Value function computed by synchronous iterative policy evaluation:')
-    vi = veval_matrix.synch_veval_iter(pssa, rsa, policy, gamma, theta=1e-6, show_count=True)
+    vi = veval_matrix.synch_veval_iter(pssa, rsa, policy, gamma, theta=theta, show_count=True)
     print(vi.reshape((5, 5)))
     print()
 
     print('Value function computed by asynchronous iterative policy evaluation:')
-    vi = veval_matrix.asynch_veval_iter(pssa, rsa, policy, gamma, theta=1e-6, show_count=True)
+    vi = veval_matrix.asynch_veval_iter(pssa, rsa, policy, gamma, theta=theta, show_count=True)
     print(vi.reshape((5, 5)))
     print()
 
-    improved = veval_matrix.policy_imprv(pssa, rsa, policy, gamma, vi, theta=1e-6)
+    improved = veval_matrix.policy_imprv(pssa, rsa, policy, gamma, vi, theta=theta)
     print('The optimal value function:')
     print(improved['value'].reshape((5, 5)))
     print()

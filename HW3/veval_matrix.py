@@ -75,7 +75,7 @@ def policy_imprv(pssa, rsa, policy, gamma, vi=None, theta=1e-5):
     nstates = rsa.shape[0]  # 25
     nactions = rsa.shape[1]  # 4
     if vi is not None:
-        vi = veval_matrix(pssa, rsa, policy, gamma)
+        vi = asynch_veval_iter(pssa, rsa, policy, gamma, theta)
     delta = 1
     vi1 = None
     while delta > theta:  # check if the value function still improving
