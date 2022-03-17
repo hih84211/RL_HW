@@ -113,7 +113,7 @@ try:
     print(vi.reshape((5, 5)))
     print()
 
-    print('Value function computed by synchronous iterative policy evaluation:')
+    print('Value function computed by asynchronous iterative policy evaluation:')
     vi = veval_matrix.asynch_veval_iter(pssa, rsa, policy, gamma, theta=1e-6, show_count=True)
     print(vi.reshape((5, 5)))
     print()
