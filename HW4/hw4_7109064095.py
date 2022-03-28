@@ -73,12 +73,19 @@ def eval(cm, trajectory, q, r, p=None):
 
 
 if __name__ == '__main__':
-    print('-------------- Part 1 --------------')
+    '''cm_world2D = Cat_and_Mouse(rows=5, columns=5,
+                               mouseInitLoc=[0, 0], catLocs=[[3, 2], [3, 3], [2, 1], [2, 4]],
+                               slipperyLocs=[[0, 0], [0, 1], [0, 2], [0, 3], [0, 4],
+                                             [1, 0], [1, 1], [1, 2], [1, 3], [1, 4],
+                                             [2, 0], [2, 2], [2, 3],
+                                             [3, 0], [3, 1], [3, 4],
+                                             [4, 0], [4, 1], [4, 2], [4, 3]], cheeseLocs=[[4, 4]])'''
     cm_world2D = Cat_and_Mouse(rows=5, columns=5,
                                mouseInitLoc=[0, 0], catLocs=[[3, 2], [3, 3]],
-                               stickyLocs=[[2, 4], [3, 4]], slipperyLocs=[[1, 1], [2, 1]], cheeseLocs=[[4, 4]])
+                               stickyLocs=[[3, 4], [2, 4]], slipperyLocs=[[1, 1], [2, 1]], cheeseLocs=[[4, 4]])
     prng = Random()
-    # prng.seed(19)
+    prng.seed(19)
+    '''print('-------------- Part 1 --------------')
     returns = np.zeros((cm_world2D.numStates, cm_world2D.numActions))
     Q = np.zeros((cm_world2D.numStates, cm_world2D.numActions))
     epsilon = 1
@@ -104,16 +111,14 @@ if __name__ == '__main__':
         # print(trajectory.shape[1])
         trajectory = get_trajectory(cm_world1D, prng, policy=Policy, epsilon=epsilon, rand_init=True, row=1, col=7)
         Q, returns, Policy = eval(cm_world1D, trajectory, q=Q, r=returns, p=Policy)
-        '''epsilon = epsilon * 0.95
-        if epsilon < 0.1:
-            epsilon = 0.1'''
+        
     print('Q*(s, a): ')
     print(Q)
     print()
     dPolicy = np.argmax(Policy, axis=1)
     print('Pi*(s): ')
     print([cm_world1D.actions[l] for l in dPolicy])
-    print()
+    print()'''
 
     print('-------------- Part 2 2D --------------')
 
@@ -122,12 +127,12 @@ if __name__ == '__main__':
     returns = np.zeros((cm_world2D.numStates, cm_world2D.numActions))
     Q = np.zeros((cm_world2D.numStates, cm_world2D.numActions))
     epsilon = 1
-    for j in range(10000):
+    for j in range(20000):
         # print(trajectory)
         # print(trajectory.shape[1])
         trajectory = get_trajectory(cm_world2D, prng, policy=Policy, epsilon=epsilon, rand_init=True, row=5, col=5)
         Q, returns, Policy = eval(cm_world2D, trajectory, q=Q, r=returns, p=Policy)
-        epsilon = epsilon * 0.99
+        epsilon = epsilon * 0.95
         if epsilon < 0.1:
             epsilon = 0.1
     print('Q*(s, a): ')
