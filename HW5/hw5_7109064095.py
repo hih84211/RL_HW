@@ -19,7 +19,7 @@ def get_trajectory(cm, prng, policy=None, epsilon=0.1 , row=0, col=0, render=Fal
     # print(gameOver)
     gameOver = False
     actions = [a for a in range(cm.numActions)]
-    trajectory = [[], [], []]  # [S[], A[], R[]]
+    trajectory = [[], [], [], []]  # [S[], A[], R[], S[]]
     newState = cm.currentState()
     while not gameOver:
         if policy is None:
@@ -30,64 +30,39 @@ def get_trajectory(cm, prng, policy=None, epsilon=0.1 , row=0, col=0, render=Fal
             else:
                 action = prng.choices(actions, weights=policy[cm.currentState()], k=1)[0]
         trajectory[0].append(newState)
-        newState, reward, gameOver = cm.step(action)
         trajectory[1].append(action)
+        newState, reward, gameOver = cm.step(action)
         trajectory[2].append(reward)
+        trajectory[3].append(newState)
+
         # print('New state: {} Reward: {} GameOver: {}'.format(newState, reward, gameOver))
         if render:
             cm_world2D.render()
     trajectory[0].append(newState)
     trajectory[1].append(-1)
     trajectory[2].append(0)
+    trajectory[3].append(0)
     if render:
         cm.render()
     trajectory = np.array(trajectory)
     return trajectory
 
 
-def eval_MC(cm, trajectory, q, r, p=None):
+def eval_TD(cm, trajectory, q, alpha=0.01, p=None):
     q_val = copy.copy(q)
-    returns = copy.copy(r)
     policy = copy.copy(p)
     length = trajectory.shape[1]
     gamma = 0.9
     G = 0
-    for i in reversed(range(length)):
+    for i in range(length):
         if trajectory[0][i] not in trajectory[0][0:i]:
             s = int(trajectory[0][i])
             a = int(trajectory[1][i])
-            r_t1 = trajectory[2][i]
-            G = r_t1 + gamma * G
+            r_1 = trajectory[2][i]
+            s_1 = int(trajectory[3][i])
             if a == -1:
                 continue
-            q_val[s][a] = (q_val[s][a] * returns[s][a] + G) / (returns[s][a] + 1)
-            if policy is not None:
-                policy[s] = np.zeros(cm.numActions)
-                maxes = np.amax(q_val[s])
-                in_index = np.argwhere(q_val[s] == maxes)
-                for m in in_index:
-                    policy[s][m[0]] = 1 / in_index.shape[0]
-            returns[s][a] += 1
-
-    return q_val, returns, policy
-
-
-def eval_TD(cm, trajectory, q, r, p=None):
-    q_val = copy.copy(q)
-    returns = copy.copy(r)
-    policy = copy.copy(p)
-    length = trajectory.shape[1]
-    gamma = 0.9
-    G = 0
-    for i in reversed(range(length)):
-        if trajectory[0][i] not in trajectory[0][0:i]:
-            s = int(trajectory[0][i])
-            a = int(trajectory[1][i])
-            r_t1 = trajectory[2][i]
-            G = r_t1 + gamma * G
-            if a == -1:
-                continue
-            q_val[s][a] = (q_val[s][a] * returns[s][a] + G) / (returns[s][a] + 1)
+            q_val[s][a] = q_val[s][a] + alpha * (r_1 + gamma * np.amax(q_val[s_1]) - q_val[s][a])
             if policy is not None:
                 policy[s] = np.zeros(cm.numActions)
                 maxes = np.amax(q_val[s])
@@ -149,17 +124,17 @@ if __name__ == '__main__':
 
     print('-------------- Part 2 2D --------------')
 
-    cm_world2D.render()
+    # cm_world2D.render()
     Policy = np.full((cm_world2D.numStates, cm_world2D.numActions), 1 / cm_world2D.numActions)
     returns = np.zeros((cm_world2D.numStates, cm_world2D.numActions))
     Q = np.zeros((cm_world2D.numStates, cm_world2D.numActions))
     epsilon = 1
-    for j in range(200):
+    for j in range(5000):
         # print(trajectory)
         # print(trajectory.shape[1])
         trajectory = get_trajectory(cm_world2D, prng, policy=Policy, epsilon=epsilon, rand_init=True, row=5, col=5)
-        Q, returns, Policy = eval_MC(cm_world2D, trajectory, q=Q, r=returns, p=Policy)
-        epsilon = epsilon * 0.95
+        Q, returns, Policy = eval_TD(cm_world2D, trajectory, alpha=.0005, q=Q, p=Policy)
+        epsilon = epsilon * 0.9
         if epsilon < 0.1:
             epsilon = 0.1
     print('Q*(s, a): ')
