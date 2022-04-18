@@ -61,8 +61,9 @@ def exp_sarsa(trajectory, q, r, alpha=0.01, p=None):
             s_1 = int(trajectory[3][i])
             if a == -1:
                 continue
-            q_val[s][a] = q_val[s][a] + alpha * (r_1 + gamma * policy[s_1] @ q_val[s_1] - q_val[s][a])
+
             if policy is not None:
+                q_val[s][a] = q_val[s][a] + alpha * (r_1 + gamma * policy[s_1] @ q_val[s_1] - q_val[s][a])
                 '''exp = np.exp(q_val[s])
                 policy[s] = exp / np.sum(exp, axis=0)'''
                 policy[s] = np.zeros(q_val.shape[1])
@@ -70,6 +71,9 @@ def exp_sarsa(trajectory, q, r, alpha=0.01, p=None):
                 in_index = np.argwhere(q_val[s] == maxes)
                 for m in in_index:
                     policy[s][m[0]] = 1 / in_index.shape[0]
+            else:
+                tmp_policy = np.full(q_val.shape[1], 1/q_val.shape[1], float)
+                q_val[s][a] = q_val[s][a] + alpha * (r_1 + gamma * tmp_policy @ q_val[s_1] - q_val[s][a])
             returns[s][a] += 1
 
     return q_val, returns, policy
@@ -87,9 +91,9 @@ if __name__ == '__main__':
                                mouseInitLoc=[0, 0], catLocs=[[3, 2], [3, 3]],
                                stickyLocs=[[3, 4], [2, 4]], slipperyLocs=[[1, 1], [2, 1]], cheeseLocs=[[4, 4]])
     prng = Random()
-    prng.seed(25)
+    prng.seed(19)
     cm_world2D.render()
-    '''print('-------------- Part 1 --------------')
+    print('-------------- Part 1 --------------')
     returns = np.zeros((cm_world2D.numStates, cm_world2D.numActions))
     Q = np.zeros((cm_world2D.numStates, cm_world2D.numActions))
     epsilon = 1
@@ -97,7 +101,7 @@ if __name__ == '__main__':
         # print(trajectory)
         # print(trajectory.shape[1])
         trajectory = get_trajectory(cm_world2D, prng, epsilon=epsilon, rand_init=True, row=5, col=5)
-        Q, returns, _ = exp_sarsa(cm_world2D, trajectory, r=returns, q=Q, alpha=.0002)
+        Q, returns, _ = exp_sarsa(trajectory, r=returns, q=Q, alpha=.0002)
     print('Q-value of the random-explore policy:')
     print(Q)
     print()
@@ -116,9 +120,9 @@ if __name__ == '__main__':
         # print(trajectory)
         # print(trajectory.shape[1])
         trajectory = get_trajectory(cm_world1D, prng, policy=Policy, epsilon=epsilon, rand_init=True, row=1, col=7)
-        Q, returns, Policy = exp_sarsa(cm_world1D, trajectory, r=returns, q=Q, alpha=.0002, p=Policy)
+        Q, returns, Policy = exp_sarsa(trajectory, r=returns, q=Q, alpha=.0002, p=Policy)
 
-        ϵ-greedy exploratory policy, which decays ϵ towards zero linearly with each episode.
+        ''' ϵ-greedy exploratory policy, which decays ϵ towards zero linearly with each episode. '''
         epsilon = epsilon * (1 - (j / episodes))
         if epsilon < 0.1:
             epsilon = 0.1
@@ -130,7 +134,7 @@ if __name__ == '__main__':
     print('Pi*(s): ')
     print([cm_world1D.actions[l] for l in dPolicy])
     print()
-    '''
+
     print('-------------- Part 2 2D --------------')
     cm_world2D.reset(initLoc=[0, 0])
     Policy = np.full((cm_world2D.numStates, cm_world2D.numActions), 1 / cm_world2D.numActions)
