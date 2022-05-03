@@ -32,16 +32,16 @@ def make_sinusoid_data(num=100):
     plt.title("numpy.sin()")
     plt.xlabel("X")
     plt.ylabel("Y")
-    plt.show()
+    # plt.show()
     return t, out_array
 
 
 # Simple NN
-layer1 = (1/4 * torch.randn(size=(1, 4), dtype=torch.float32)).clone().detach().requires_grad_(True)
-bias1 = torch.tensor([0.0] * 4, dtype=torch.float32, requires_grad=True)
-layer2 = (1/4 * torch.randn(size=(4, 4), dtype=torch.float32)).clone().detach().requires_grad_(True)
-bias2 = torch.tensor([0.0] * 4, dtype=torch.float32, requires_grad=True)
-layer3 = (1/4 * torch.randn(size=(4, 4), dtype=torch.float32)).clone().detach().requires_grad_(True)
+layer1 = (1/4 * torch.randn(size=(1, 16), dtype=torch.float32)).clone().detach().requires_grad_(True)
+bias1 = torch.tensor([0.0] * 16, dtype=torch.float32, requires_grad=True)
+layer2 = (1/4 * torch.randn(size=(16, 8), dtype=torch.float32)).clone().detach().requires_grad_(True)
+bias2 = torch.tensor([0.0] * 8, dtype=torch.float32, requires_grad=True)
+layer3 = (1/4 * torch.randn(size=(8, 4), dtype=torch.float32)).clone().detach().requires_grad_(True)
 bias3 = torch.tensor([0.0] * 4, dtype=torch.float32, requires_grad=True)
 layer4 = (1/4 * torch.randn(size=(4, 1), dtype=torch.float32)).clone().detach().requires_grad_(True)
 bias4 = torch.tensor([0.0] * 1, dtype=torch.float32, requires_grad=True)
@@ -52,9 +52,9 @@ def dnn(feature_input):
     feature_input = np.reshape(feature_input, (-1, 1))
     feature_input = torch.tensor(feature_input, dtype=torch.float32)
 
-    hid_out = torch.tanh(torch.matmul(feature_input, layer1) + bias1)
+    hid_out = torch.sinc(torch.matmul(feature_input, layer1) + bias1)
     hid_out = torch.sinc(torch.matmul(hid_out, layer2) + bias2)
-    # hid_out = torch.sin(torch.matmul(hid_out, layer3) + bias3)
+    hid_out = torch.sinc(torch.matmul(hid_out, layer3) + bias3)
     output = torch.tanh(torch.matmul(hid_out, layer4) + bias4)
 
     return output
@@ -78,11 +78,11 @@ def cost(model_out, target_input):
 
 optim = torch.optim.RMSprop([layer1, bias1, layer2, bias2, layer4, bias4], lr=0.01)
 
-data = make_sinusoid_data(800)
+data = make_sinusoid_data(300)
 data_train, data_test, target_train, target_test = train_test_split(data[0], data[1], test_size=0.25,
                                                                     random_state=11)
 
-n_epochs = 20001
+n_epochs = 40001
 training_costs = []
 
 for e in range(n_epochs + 1):
@@ -91,11 +91,11 @@ for e in range(n_epochs + 1):
     cost_tmp.backward()
     optim.step()
     training_costs.append(float(cost_tmp))
-    if not e % 50:
+    if not e % 100:
         print('Epoch %4d: %.6f' % (e, float(cost_tmp)))
 
-plt.plot(training_costs)
-plt.show()
+# plt.plot(training_costs)
+# plt.show()
 
 pred = predict(data_train)
 
