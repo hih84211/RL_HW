@@ -55,8 +55,8 @@ class MLP(torch.nn.Module):
 #    (generates animated .mp4 video to demo computed policy)
 #
 #
-
-simenv = gym.make('CartPole-v1')
+max_steps = 500
+simenv = gym.make('CartPole-v1', max_episode_steps=max_steps)
 simenv.numActions = simenv.action_space.n
 simenv.numFeatures = simenv.observation_space.shape[0]
 
@@ -64,26 +64,27 @@ q1 = MLP(simenv.numFeatures, simenv.numActions)
 q2 = MLP(simenv.numFeatures, simenv.numActions)
 
 # Compute q(s,a) using Double Q-learning with function approximation
-dbl_qlearn_fa(simenv=simenv, q1=q1, q2=q2, gamma=0.8, epsilon=1.0, alpha=1e-3, num_episodes=12000, max_episode_len=500,
-              decayEpsilon=True, showPlots=show_plots)
+dbl_qlearn_fa(simenv=simenv, q1=q1, q2=q2, gamma=0.8, epsilon=1.0, alpha=1e-3, num_episodes=5000,
+              max_episode_len=max_steps, decayEpsilon=True, showPlots=show_plots)
 
 # run an episode using computed q(s,a)
 from gym.wrappers import RecordVideo
 
 simenv = RecordVideo(gym.make('CartPole-v1'), './cartpole_video')
-state = simenv.reset()
 
-term_status = False
-episode_len = 0
-while not term_status:
-    action = int(torch.argmax((q1.forward(state) + q2.forward(state)) / 2))
-    (next_state, reward, term_status, _) = simenv.step(action)
+for i in range(3):
+    state = simenv.reset()
+    term_status = False
+    episode_len = 0
+    while not term_status:
+        action = int(torch.argmax((q1.forward(state) + q2.forward(state)) / 2))
+        (next_state, reward, term_status, _) = simenv.step(action)
 
-    if term_status: break  # reached end of episode
-    state = next_state
-    episode_len += 1
-print('Episode Length: {}'.format(episode_len))
-
+        if term_status:
+            break  # reached end of episode
+        state = next_state
+        episode_len += 1
+    print('Episode Length: {}'.format(episode_len))
 simenv.close()
 
 #

@@ -14,7 +14,6 @@
 
 
 from random import Random
-
 import gym
 import torch
 
@@ -127,22 +126,16 @@ def dbl_qlearn_fa(simenv, q1, q2, gamma, epsilon, alpha, num_episodes, max_episo
 
             tot_reward += reward
 
+            '''
+            先將q1, q2兩個網路放在array（q_pool）
+            再隨機抽出待更新網路的index（lucky_q），以及固定網路的index（fixed_q）
+            再根據index，從q_pool中取得相對應的q網路進行更新。
+            '''
             q_pool = [q1, q2]
             lucky_q = prng.choice([0, 1])
             fixed_q = lucky_q % 2
             q_sa = q_pool[lucky_q](state)[action]
             q_sa.backward()
-
-            '''if lucky_q == 1:
-                q1_s.backward(q1_s)
-                q_sa = q1_s[action]
-                q_update = q1
-                q_fix = q2
-            else:
-                q2_s.backward(q2_s)
-                q_sa = q2_s[action]
-                q_update = q2
-                q_fix = q1'''
 
             with torch.no_grad():
                 q_sa1 = q_pool[fixed_q](next_state).max()
@@ -151,18 +144,11 @@ def dbl_qlearn_fa(simenv, q1, q2, gamma, epsilon, alpha, num_episodes, max_episo
                         weights += alpha * (reward - q_sa) * weights.grad
                     else:
                         weights += alpha * (reward + gamma * q_sa1 - q_sa) * weights.grad
-                    weights.grad.zero_()  # zero out gradients (otherwise PyTorch will keep accumulating gradients)
-                '''q_sa1 = q_fix(next_state).max()
-                for weights in q_update.parameters():
-                    if term_status:
-                        weights += alpha * (reward - q_sa) * weights.grad
-                    else:
-                        weights += alpha * (reward + gamma * q_sa1 - q_sa) * weights.grad
-                    weights.grad.zero_()  # zero out gradients (otherwise PyTorch will keep accumulating gradients)
-                '''
+                    weights.grad.zero_()
+
             # check termination status from environment (reached terminal state?)
             if term_status:
-                break  # if termination status is True, we've reached end of episode
+                break
 
             # move to next step in episode
             state = next_state
