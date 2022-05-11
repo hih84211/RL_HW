@@ -4,7 +4,7 @@
 #
 
 #
-#"Skeleton" file for HW...
+# "Skeleton" file for HW...
 #
 # Your task: Complete the missing code (see comments below in the code):
 #            1. Implement Policy Gradient with Monte Carlo (REINFORCE)
@@ -13,12 +13,14 @@
 
 
 from random import Random
-import torch 
+import torch
+
 
 #
 #   Policy-gradient with Monte Carlo
 #
-def pg_mc(simenv, policy, gamma, alpha, num_episodes, max_episode_len, window_len=100, term_thresh=None, showPlots=False, prng_seed=789):
+def pg_mc(simenv, policy, gamma, alpha, num_episodes, max_episode_len, window_len=100, term_thresh=None,
+          showPlots=False, prng_seed=789):
     '''
     Parameters:
         simenv:  Simulation environment instance
@@ -33,63 +35,81 @@ def pg_mc(simenv, policy, gamma, alpha, num_episodes, max_episode_len, window_le
         prng_seed:  Seed for the random number generator        
     '''
 
-    #initialize a few things
+    # initialize a few things
     #    
-    prng=Random()
+    prng = Random()
     prng.seed(prng_seed)
     simenv.reset(seed=prng_seed)
+    optim = torch.optim.Adam(policy.parameters(), lr=alpha)
 
     #
-    #You might need to add some additional initialization code here,
+    # You might need to add some additional initialization code here,
     #  depending on your specific implementation
     #
 
     ###########################
-    #Start episode loop
+    # Start episode loop
     #
-    episodeLengths=[]
-    episodeRewards=[]
-    averagedRewards=[]
+    episodeLengths = []
+    episodeRewards = []
+    averagedRewards = []
 
     for episode in range(num_episodes):
-        if episode%100 == 0:
+        if episode % 100 == 0:
             print('Episode: {}'.format(episode))
 
-        #initial state & action (action according to policy)
-        state=simenv.reset()
-        
+        # initial state & action (action according to policy)
+        state = simenv.reset()
+
         #
-        #You might need to add some code here,
+        # You might need to add some code here,
         #  depending on your specific implementation
         #
 
-        #Run episode state-action-reward sequence to end
+        # Run episode state-action-reward sequence to end
         #
-        episode_length=0
-        tot_reward=0
-        
-        while episode_length < max_episode_len:
+        episode_length = 0
+        tot_reward = 0
+        rewards = []
+        log_pis = []
 
-        #
-        #Fill in the missing algorithm code here!
-        # (Note: test your results with the pg_mc_demo.py file)
-        #
-        
-        
-        #update stats for later plotting
+        while episode_length < max_episode_len:
+            action, log_pi = policy.choose_action(state)
+            state, reward, term_status, _ = simenv.step(action)
+            rewards.append(reward)
+            log_pis.append(log_pi)
+
+            tot_reward += reward
+            if term_status:
+                break
+
+        # Loop for each step of the episode t =0, 1,..., T - 1:
+        episode_length = len(rewards)
+        losses = []
+        for i in range(episode_length):
+            rt2rend = rewards[i:]
+            Gt = .0  # reset Gt to 0 for each episode
+            for j in range(len(rt2rend)):
+                Gt = Gt + gamma ** j * rt2rend[j]  # compute Gt
+            losses.append(-log_pis[i] * Gt)  # collect losses from every steps
+        losses = torch.stack(losses)
+        jw = losses.sum()
+        jw.backward()
+        optim.step()
+        optim.zero_grad()
+
         episodeLengths.append(episode_length)
         episodeRewards.append(tot_reward)
-        avg_tot_reward=sum(episodeRewards[-window_len:])/window_len
+        avg_tot_reward = sum(episodeRewards[-window_len:]) / window_len
         averagedRewards.append(avg_tot_reward)
 
-        if episode%100 == 0:
+        if episode % 100 == 0:
             print('\tAvg reward: {}'.format(avg_tot_reward))
 
-        #if termination condition was specified, check it now
+        # if termination condition was specified, check it now
         if (term_thresh != None) and (avg_tot_reward >= term_thresh): break
 
-
-    #if plot metrics was requested, do it now
+    # if plot metrics was requested, do it now
     if showPlots:
         import matplotlib.pyplot as plt
         plt.subplot(311)
@@ -105,6 +125,6 @@ def pg_mc(simenv, policy, gamma, alpha, num_episodes, max_episode_len, window_le
         plt.xlabel('Episode')
         plt.ylabel('Avg Total Reward')
         plt.show()
-        #cleanup plots
+        # cleanup plots
         plt.cla()
         plt.close('all')

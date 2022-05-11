@@ -150,7 +150,8 @@ def dbl_qlearn_fa(simenv, q1, q2, gamma, epsilon, alpha, num_episodes, max_episo
             optim.zero_grad()  # zero out gradients (otherwise PyTorch will keep accumulating gradients)
 
             # check termination status from environment (reached terminal state?)
-            if term_status: break  # if termination status is True, we've reached end of episode
+            if term_status:
+                break  # if termination status is True, we've reached end of episode
 
             # move to next step in episode
             state = next_state
